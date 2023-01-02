@@ -7,7 +7,7 @@ mod types;
 mod auth;
 mod database;
 
-use routes::{validate::validate, add::add};
+use routes::{validate::validate, add::add, remove::remove, get::get, get_all::get_all, search::search};
 use types::AppState;
 
 fn main() {
@@ -28,6 +28,10 @@ fn main() {
                 .app_data(web::Data::new(AppState { database: database.clone() }))
                 .service(validate)
                 .service(add)
+                .service(remove)
+                .service(get)
+                .service(get_all)
+                .service(search)
         })
         .bind(("0.0.0.0", 8080)).unwrap()
         .run()
