@@ -6,6 +6,7 @@ use crate::{types::AppState, auth::validate_token};
 #[derive(Deserialize)]
 struct ToGet {
     user_id: String,
+    qtd: i32,
     page: i32
 }
 
@@ -20,7 +21,7 @@ pub async fn get_all(req: HttpRequest, state: Data<AppState>) -> impl Responder 
             return HttpResponse::Unauthorized().body("");
         }
 
-        if let Ok(file) = state.database.get_all(&to_get.user_id, to_get.page).await {
+        if let Ok(file) = state.database.get_all(&to_get.user_id, to_get.qtd, to_get.page).await {
             return HttpResponse::Ok()
                 .body(serde_json::to_string(&file).unwrap());
         } else {

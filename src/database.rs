@@ -91,12 +91,12 @@ impl Database {
         }
     }
 
-    pub async fn get_all(&self, user_id: &str, page: i32) -> Result<Vec<File>, ()> {
+    pub async fn get_all(&self, user_id: &str, qtd: i32, page: i32) -> Result<Vec<File>, ()> {
         let conn = self.pool.get().await.unwrap();
 
         match conn.query(
-            "select * from file where user_id = $1::TEXT order by id desc limit 5 offset $2::INT",
-            &[&user_id, &((page - 1) * 5)]
+            "select * from file where user_id = $1::TEXT order by id desc limit $2::INT offset $3::INT",
+            &[&user_id, &qtd, &((page - 1) * qtd)]
         ).await {
             Ok(rows) => {
                 let files: Vec<_> = rows.iter().map(|row| {
