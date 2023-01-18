@@ -1,7 +1,7 @@
 use std::env;
 
 use bb8::Pool;
-use bb8_postgres::{PostgresConnectionManager, tokio_postgres::{NoTls, Config}};
+use bb8_postgres::{PostgresConnectionManager, tokio_postgres::NoTls};
 use log::{info, error};
 use serde::{Serialize, Deserialize};
 
@@ -29,22 +29,12 @@ impl Database {
     pub async fn new() -> Self {
         info!("Starting database connection pool");
 
-        let mut db_config = Config::new();
-        let pg_user = env::var("PG_USER").expect("The postgres username is necessary");
-        let pg_password = env::var("PG_PASSWORD").expect("The postgres password is necessary");
-        let pg_db_name = env::var("PG_DB_NAME").expect("The postgres db name is necessary");
-        let pg_hostname = env::var("PG_HOSTNAME").expect("The postgres hostname is necessary");
+        let db_url = env::var("DATABASE_URL").expect("The database url is necessary");
 
-        db_config
-            .user(&pg_user)
-            .password(&pg_password)
-            .dbname(&pg_db_name)
-            .host(&pg_hostname);
-
-        let manager = bb8_postgres::PostgresConnectionManager::new(
-            db_config,
+        let manager = bb8_postgres::PostgresConnectionManager::new_from_stringlike(
+            &db_url,
             NoTls
-        );
+        ).unwrap();
 
         let pool = bb8::Pool::builder()
             .build(manager)
@@ -101,12 +91,12 @@ impl Database {
         }
     }
 
-    pub async fn get_all(&self, user_id: &str, page: i32) -> Result<Vec<File>, ()> {
+    pub async fn get_all(&self, user_id: &str, qtd: i32, page: i32) -> Result<Vec<File>, ()> {
         let conn = self.pool.get().await.unwrap();
 
         match conn.query(
-            "select * from file where user_id = $1::TEXT order by id desc limit 5 offset $2::INT",
-            &[&user_id, &((page - 1) * 5)]
+            "select * from file where user_id = $1::TEXT order by id desc limit $2::INT offset $3::INT",
+            &[&user_id, &qtd, &((page - 1) * qtd)]
         ).await {
             Ok(rows) => {
                 let files: Vec<_> = rows.iter().map(|row| {
